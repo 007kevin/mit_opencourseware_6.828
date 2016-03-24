@@ -6,6 +6,7 @@
 #include <assert.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <errno.h>
 
 // Simplifed xv6 shell.
 
@@ -73,8 +74,13 @@ runcmd(struct cmd *cmd)
   case '>':
   case '<':
     rcmd = (struct redircmd*)cmd;
-    fprintf(stderr, "redir not implemented\n");
     // Your code here ...
+    close(rcmd->fd);
+    if (open(rcmd->file, rcmd->mode, 0600) == -1){
+      fprintf(stderr, "%s\n", strerror(errno));
+      exit(errno);
+    }
+    
     runcmd(rcmd->cmd);
     break;
 
