@@ -60,9 +60,14 @@ runcmd(struct cmd *cmd)
     ecmd = (struct execcmd*)cmd;
     if(ecmd->argv[0] == 0)
       exit(0);
-    fprintf(stderr, "exec not implemented\n");
-    // Your code here ...
+    // Your code here
+
+    // A successful exec with replace current process
+    // so if the first exec fails, try again with '/bin' 
     execv(ecmd->argv[0], ecmd->argv);
+    char buf[100];
+    sprintf(buf, "/bin/%s", ecmd->argv[0]);
+    execv(buf, ecmd->argv);
     break;
 
   case '>':
