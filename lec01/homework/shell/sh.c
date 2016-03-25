@@ -69,6 +69,8 @@ runcmd(struct cmd *cmd)
     char buf[100];
     sprintf(buf, "/bin/%s", ecmd->argv[0]);
     execv(buf, ecmd->argv);
+    sprintf(buf, "/usr/bin/%s", ecmd->argv[0]);
+    execv(buf, ecmd->argv);
     break;
 
   case '>':
@@ -80,14 +82,35 @@ runcmd(struct cmd *cmd)
       fprintf(stderr, "%s\n", strerror(errno));
       exit(errno);
     }
-    
     runcmd(rcmd->cmd);
     break;
 
   case '|':
     pcmd = (struct pipecmd*)cmd;
-    fprintf(stderr, "pipe not implemented\n");
     // Your code here ...
+    int pipefd[2];
+    if (pipe(pipefd) == -1){
+      fprintf(stderr, "%s\n", strerror(errno));
+      exit(errno);
+    }
+    if (fork1() == 0){
+      close(0);
+      dup(pipefd[0]);
+      close(pipefd[0]);
+      close(pipefd[1]);
+      runcmd(pcmd->right);
+    }
+    if (fork1() == 0){
+      close(1);
+      dup(pipefd[1]);
+      close(pipefd[0]);
+      close(pipefd[1]);
+      runcmd(pcmd->left);
+    }
+    close(pipefd[0]);
+    close(pipefd[1]);
+    wait();
+    wait();
     break;
   }    
   exit(0);
