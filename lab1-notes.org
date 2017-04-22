@@ -1,0 +1,78 @@
+* PC's Physical Address Space Layout
+
++------------------+  <- 0xFFFFFFFF (4GB)
+|      32-bit      |
+|  memory mapped   |
+|     devices      |
+|                  |
+/\/\/\/\/\/\/\/\/\/\
+
+/\/\/\/\/\/\/\/\/\/\
+|                  |
+|      Unused      |
+|                  |
++------------------+  <- depends on amount of RAM
+|                  |
+|                  |
+| Extended Memory  |
+|                  |
+|                  |
++------------------+  <- 0x00100000 (1MB)
+|     BIOS ROM     |
++------------------+  <- 0x000F0000 (960KB)
+|  16-bit devices, |
+|  expansion ROMs  |
++------------------+  <- 0x000C0000 (768KB)
+|   VGA Display    |
++------------------+  <- 0x000A0000 (640KB)
+|                  |
+|    Low Memory    |
+|                  |
++------------------+  <- 0x00000000
+
+* PC Boot up
+  The first instruction executed is:
+
+  f000:fff0] 0xffff0:	ljmp   $0xf000,$0xe05b
+  
+  - The IBM PC starts executing with CS = 0xf000, IP = 0xfff0 thus 
+    when translasted to physical address 16*CS+IP = 0xffff0
+  - 0xffff0 is 16 bytes before the end of BIOS (0x100000) therefore first
+    thing BIOS does is jmp backwards to an eariler location
+
+  When the BIOS runs, it sets up the interrupt descript table and initializes various
+  devices such as VGA display (thus why 'Starting SeaBIOS' on startup)
+
+  After initializing the PCI bus and all important devics BIOS knows about, it searches
+  for bootable device such as floppy, hard drive, or CD-ROM
+
+  Once bootable disk found, BIOS reads the boot loader from disk and transfers control to it
+
+* The Boot Loader
+  
+  Floppy and hard disks divided into 512 byte regions called sectors
+  - sector :: disk's minimum transfer granularity: each read or write operation must be
+              one or more sectors in size and aligned on a sector boundary.
+  - boot sector :: the first sector of bootable disk (where the boot loader code resides).
+                   The BIOS loads the 512 boot sector into memory at physical address
+                   0x7c00 through 0x7dff then uses jmp instruction to set
+                   CP:IP 0000:7c00 passing control to boot loader
+
+  Note, with the advent of CD-ROM with sector sizes of 2048 bytes and BIO having ability to
+  load a much larger boot image ( via multiple sectors ) resulted in a more powerful boot.
+
+* The Xv6 Boot Loader
+  Xv6's boot loader will fit into only 512 bytes which consists of 
+
+  - boot/boot.S
+  - boot/main.c
+
+  Two functions boot loader must perform:
+  1. boot loader switches the processor from real mode to 32-protected mode.
+     - this allows software to access memory above 1MB in the processor's physical
+       address space. Transition offsets (segment:offset pairs) are 32 bits instead of 
+       16 bits in protected mode.
+  2. boot loader reads kernel from hard disk by directly accessing the IDE (Integrated
+     Drive Electronics which is interface between motherboard's bus to computer disk
+     storage)) disk device registers via x86's special IO instructions.
+

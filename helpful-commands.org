@@ -1,0 +1,11 @@
+* make
+  make qemu
+  make qemu-nox
+  make qemu-gdb      
+  make qemu-nox-gdb
+
+* misc
+  *Examine full list of the names, sizes, and link addresses of all sections in kernel*
+  *Notice how .text holds program's executable instructions which is loaded at address*
+  *01000000*
+  objdump -h obj/kern/kernel 
